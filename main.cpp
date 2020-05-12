@@ -3,7 +3,8 @@
 #include <string>
 #include <vector>
 #include <queue>
-
+#include <stack>
+#include <ctime>
 
 
 
@@ -28,44 +29,107 @@ public:
 
     }
 
-    void dijkstraAlg(){
+    int getSource(){
+        return source;
+    }
 
-        std::vector<float> distances(nVertices, INT_MAX);
+    int getTarget(){
+        return destination;
+    }
+
+    std::vector<std::pair<float, int>> dijkstraAlg(int start){
+
+        std::vector<std::pair<float, int>> distances(nVertices, std::make_pair(INT_MAX, -1));
         std::priority_queue<std::pair<float, int>> pQueue;
-        std::cout << source << std::endl;
-        pQueue.push(std::make_pair(0, source));
-        distances[source] = 0;
-
+        pQueue.push(std::make_pair(0, start));
+        distances[start].first = 0;
 
         while(!pQueue.empty()){
             auto j = pQueue.top().second;
+
             pQueue.pop();
             for(auto i = adj[j].begin(); i != adj[j].end(); i++){
                 int v = (*i).first;
                 float weight = (*i).second;
-                if(distances[v] > distances[j] + weight){
-                    distances[v] = distances[j] + weight;
-                    pQueue.push(std::make_pair(distances[v], v));
+
+                if(distances[v].first > distances[j].first + weight){
+
+                    distances[v].first = distances[j].first + weight;
+                    distances[v].second = j;
+                    pQueue.push(std::make_pair(distances[v].second, v));
                 }
 
             }
         }
-        /*
-        for(int i = 0; i < nVertices; i++){
-            std::cout << "Vertex: " << i << " Distance: " << distances[i] << std::endl;
-        }
-        */
-        std::cout << "Source to Destination = " << distances[destination] << std::endl;
+
+        return distances;
+
     }
 
+
+    void findKShortest(int s, int d){
+        std::vector<float> kShortest(k, INT_MAX);
+        auto distances = dijkstraAlg(s);
+        kShortest.push_back(0);
+        std::stack<int> shortestPath;
+        int n = distances[getTarget()].second;
+
+        while(n != -1){
+            shortestPath.push(n);
+            n = distances[n].second;
+        }
+
+        std::vector<int> visited;
+
+        float min = INT_MAX;
+        while(!shortestPath.empty()){
+            auto current = shortestPath.top();
+
+            shortestPath.pop();
+            for(auto & i : adj[current]){
+                int v = i.first;
+                float weight = i.second;
+
+                bool found = false;
+                for(auto j : distances){
+                    if(v == getTarget() || j.second == v || (std::find(visited.begin(),visited.end(), v) != visited.end())){
+                        found = true;
+                        break;
+                    }
+                }
+                if(!found){
+                    visited.push_back(v);
+                    float temp = (distances[v].first - distances[getTarget()].first) + dijkstraAlg(v)[getTarget()].first;
+                    if(temp < kShortest[k - 1]){
+                        kShortest[k - 1] = temp;
+                        std::sort(kShortest.begin(), kShortest.end());
+
+                    }
+                }
+            }
+        }
+        for(int i = 0; i < k; i++){
+            if(i == 0){
+                std::cout << distances[getTarget()].first + kShortest[i];
+            } else {
+                std::cout << ", " << distances[getTarget()].first + kShortest[i];
+            }
+        }
+        std::cout << std::endl;
+    }
 };
 
 Graph setup(const std::string &fileName);
 
 int main(int argc, char *argv[]) {
     Graph graph = setup(argv[1]);
+    clock_t start, end;
 
-    graph.dijkstraAlg();
+    start = clock();
+    graph.findKShortest(graph.getSource(), graph.getTarget());
+    end = clock();
+
+    std::cout << ((double) (end - start)) << std::endl;
 
     return 0;
 }

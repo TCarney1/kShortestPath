@@ -8,6 +8,7 @@
 
 
 
+
 class Graph{
 private:
     int nVertices, source, destination, k;
@@ -38,22 +39,25 @@ public:
     }
 
     std::vector<std::pair<float, int>> dijkstraAlg(int start){
-
+        // stores the current distance, and which node it came from.
         std::vector<std::pair<float, int>> distances(nVertices, std::make_pair(INT_MAX, -1));
+        // so we can use the shortest values first.
         std::priority_queue<std::pair<float, int>> pQueue;
         pQueue.push(std::make_pair(0, start));
+        // to store minimum distances to get to each node.
         distances[start].first = 0;
 
-        while(!pQueue.empty()){
+        while(!pQueue.empty()) {
             auto j = pQueue.top().second;
-
             pQueue.pop();
-            for(auto i = adj[j].begin(); i != adj[j].end(); i++){
+
+            for (auto i = adj[j].begin(); i != adj[j].end(); i++) {
+                // v is current vertex
                 int v = (*i).first;
                 float weight = (*i).second;
 
-                if(distances[v].first > distances[j].first + weight){
-
+                // compares current route vs route through new vertex + the shortest distance it takes to get to that node.
+                if (distances[v].first > distances[j].first + weight) {
                     distances[v].first = distances[j].first + weight;
                     distances[v].second = j;
                     pQueue.push(std::make_pair(distances[v].second, v));
@@ -61,58 +65,81 @@ public:
 
             }
         }
-
         return distances;
-
     }
 
 
-    void findKShortest(int s, int d){
+    void findKShortest(int s, int dest){
+        // store the value to be added to the shortest path for k shortest paths.
         std::vector<float> kShortest(k, INT_MAX);
-        auto distances = dijkstraAlg(s);
+        // init the first value with 0 since it will be our shortest path and we dont need to add anything.
         kShortest.push_back(0);
-        std::stack<int> shortestPath;
-        int n = distances[getTarget()].second;
 
+        // get the distances for the shortest path.
+        auto distances = dijkstraAlg(s);
+        // to store the shortest path (reversing it as it is backwards now).
+        std::stack<int> shortestPath;
+        // start at the last NON goal node of the shortest path.
+        int n = distances[dest].second;
+
+        // no point calculating the already visited nodes. since it doesnt matter in the case which node we come from.
+        std::vector<int> visited;
+
+        // reverses and stores the shortest path of nodes.
+        // we will use these nodes to check for other routes to find the k shortest paths.
         while(n != -1){
             shortestPath.push(n);
             n = distances[n].second;
         }
 
-        std::vector<int> visited;
+
+
 
         float min = INT_MAX;
+        // go through every node in the shortest path (Not including the goal node)
         while(!shortestPath.empty()){
             auto current = shortestPath.top();
-
             shortestPath.pop();
+            // go through all the adjacent nodes to this node (check the nodes next to the path)
             for(auto & i : adj[current]){
+                // v is vertex
                 int v = i.first;
                 float weight = i.second;
 
                 bool found = false;
+                //*****************************************************************************************************
+                // this checks if the current node is either: on the shortest path, is the goal node or has
+                // already been visited. I found that doing it this way is faster on average as any true case results
+                // in breaking out of the loop. Where as if we search for the false cases we have to search the entire
+                // list every time.
+                //*****************************************************************************************************
                 for(auto j : distances){
-                    if(v == getTarget() || j.second == v || (std::find(visited.begin(),visited.end(), v) != visited.end())){
+                    if(j.second == v || v == dest || (std::find(visited.begin(),visited.end(), v) != visited.end())){
                         found = true;
                         break;
                     }
                 }
                 if(!found){
                     visited.push_back(v);
-                    float temp = (distances[v].first - distances[getTarget()].first) + dijkstraAlg(v)[getTarget()].first;
+                    // temp = (weight to get here - best total weight) + weight left.
+                    float temp = (distances[v].first - distances[dest].first) + dijkstraAlg(v)[dest].first;
+                    // keep track of the kShortest routes.
                     if(temp < kShortest[k - 1]){
+                        // replace the longest one if we find one shorter.
                         kShortest[k - 1] = temp;
+                        // sort to make sure the longest one gets replaced next time.
                         std::sort(kShortest.begin(), kShortest.end());
 
                     }
                 }
             }
         }
+        // output shortest k distances. (adds the extra distance onto the shortest path)
         for(int i = 0; i < k; i++){
             if(i == 0){
-                std::cout << distances[getTarget()].first + kShortest[i];
+                std::cout << distances[dest].first + kShortest[i];
             } else {
-                std::cout << ", " << distances[getTarget()].first + kShortest[i];
+                std::cout << ", " << distances[dest].first + kShortest[i];
             }
         }
         std::cout << std::endl;

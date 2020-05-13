@@ -11,13 +11,12 @@
 
 class Graph{
 private:
-    int nVertices, source, destination, k;
+    int nVertices, source{}, destination{}, k{};
     //index is node1, pair<node2, weight>
     std::vector<std::pair<int, float>> * adj;
 
 public:
-    Graph(int vertices): nVertices{vertices}, adj{new std::vector<std::pair<int, float>>[vertices]}{}
-
+    explicit Graph(int vertices): nVertices{vertices}, adj{new std::vector<std::pair<int, float>>[vertices]}{}
 
     void addEdge(int node1, int node2, float weight){
         adj[node1].emplace_back(node2, weight);

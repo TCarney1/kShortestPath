@@ -71,27 +71,22 @@ public:
     void findKShortest(int s, int dest){
         // store the value to be added to the shortest path for k shortest paths.
         std::vector<float> kShortest(k, INT_MAX);
-        // init the first value with 0 since it will be our shortest path and we dont need to add anything.
-        kShortest.push_back(0);
-
         // get the distances for the shortest path.
         auto distances = dijkstraAlg(s);
+        // init the first value with the shortest distance.
+        kShortest.push_back(distances[dest].first);
         // to store the shortest path (reversing it as it is backwards now).
         std::stack<int> shortestPath;
-        // start at the last NON goal node of the shortest path.
-        int n = distances[dest].second;
-
         // no point calculating the already visited nodes. since it doesnt matter in the case which node we come from.
         std::vector<int> visited;
-
+        // start at the last NON goal node of the shortest path.
+        int n = distances[dest].second;
         // reverses and stores the shortest path of nodes.
         // we will use these nodes to check for other routes to find the k shortest paths.
         while(n != -1){
             shortestPath.push(n);
             n = distances[n].second;
         }
-
-
 
 
         float min = INT_MAX;
@@ -112,8 +107,9 @@ public:
                 // in breaking out of the loop. Where as if we search for the false cases we have to search the entire
                 // list every time.
                 //*****************************************************************************************************
+                auto check =  (std::find(visited.begin(),visited.end(), v) != visited.end());
                 for(auto j : distances){
-                    if(j.second == v || v == dest || (std::find(visited.begin(),visited.end(), v) != visited.end())){
+                    if(j.second == v || v == dest || check){
                         found = true;
                         break;
                     }
@@ -121,7 +117,7 @@ public:
                 if(!found){
                     visited.push_back(v);
                     // temp = (weight to get here - best total weight) + weight left.
-                    float temp = (distances[v].first - distances[dest].first) + dijkstraAlg(v)[dest].first;
+                    float temp = distances[v].first + dijkstraAlg(v)[dest].first;
                     // keep track of the kShortest routes.
                     if(temp < kShortest[k - 1]){
                         // replace the longest one if we find one shorter.
@@ -133,12 +129,12 @@ public:
                 }
             }
         }
-        // output shortest k distances. (adds the extra distance onto the shortest path)
+        // output shortest k distances.
         for(int i = 0; i < k; i++){
             if(i == 0){
-                std::cout << distances[dest].first + kShortest[i];
+                std::cout << kShortest[i];
             } else {
-                std::cout << ", " << distances[dest].first + kShortest[i];
+                std::cout << ", " << kShortest[i];
             }
         }
         std::cout << std::endl;
@@ -155,7 +151,8 @@ int main(int argc, char *argv[]) {
     graph.findKShortest(graph.getSource(), graph.getTarget());
     end = clock();
 
-    std::cout << ((double) (end - start)) << std::endl;
+    std::cout << "Time: " << ((double) (end - start))  << " Millisecs" << std::endl;
+
 
     return 0;
 }
